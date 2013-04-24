@@ -29,23 +29,32 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
 /**
- * TestNG class that will test the AnalysisWorker interface by sending request
- * and receiving reply over RabbitMQ. First, it runs the analysis server
- * which runs the workers. Workers await for messages from the RabbitMQ. In real
- * application, the client and server may reside in different JVM.
+ * TestNG class that will test the client's analysis server by sending request
+ * and receiving reply over RabbitMQ. It is a client to the server, but first
+ * it runs the analysis server which runs the workers that await for
+ * messages from the RabbitMQ. In real application, the client and server would
+ * reside in different JVM.
+ * 
+ * XXX: This is still work-in-progress
  * 
  * @author Yoichi
+ * @see RPC server code: {http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
+ * @see Round-robin workers: {@link http://www.rabbitmq.com/tutorials/tutorial-two-java.html}
  */
 public class AnalysisRequestTest
 {
 	private static final String JSON_TYPE = "application/json";
 	private Connection connection;
 	private Channel channel;
-	private static final String REQUEST_QUEUE_NAME = AnalysisServlet.RPC_QUEUE_NAME;
+	private static final String REQUEST_QUEUE_NAME = "pals_analysis";
 	private static final String EXCHANGE = "";
 	private static final String ROUTING_KEY = REQUEST_QUEUE_NAME;
-	private String replyQueueName;
-	private QueueingConsumer consumer;
+	private static final boolean NOT_AUTO_ACKN = false; // server needs acknowledgment
+
+	private String replyQueueName; // replyQueueName is set when requestQeueu is
+									// set
+	private QueueingConsumer consumer; // consumer is created from the channel
+	private String consumerTag;
 	private AnalysisServlet analysisServlet;
 
 	@BeforeMethod
@@ -71,7 +80,8 @@ public class AnalysisRequestTest
 
 		this.replyQueueName = this.channel.queueDeclare().getQueue();
 		this.consumer = new QueueingConsumer(this.channel);
-		this.channel.basicConsume(this.replyQueueName, true, this.consumer);
+		this.consumerTag = this.channel.basicConsume(this.replyQueueName,
+				NOT_AUTO_ACKN, this.consumer);
 	}
 
 	@AfterClass
@@ -113,7 +123,7 @@ public class AnalysisRequestTest
 	private AnalysisReply sendAndWait(AnalysisRequest request)
 			throws AnalysisException
 	{
-		AnalysisMessageParser parser = new AnalysisMessageParser();
+		AnalysisMessageParser parser = new AnalysisMessageParserJackson();
 		String corrId = UUID.randomUUID().toString();
 
 		String requestMsg;
@@ -135,6 +145,11 @@ public class AnalysisRequestTest
 		catch (AnalysisException e)
 		{
 			throw e;
+		}
+		catch (MessageParserException e)
+		{
+			AnalysisException ae = new AnalysisException(e);
+			throw ae;
 		}
 	}
 
