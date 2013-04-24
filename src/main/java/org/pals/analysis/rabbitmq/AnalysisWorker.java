@@ -19,11 +19,14 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
- * Worker is a user of RabbitMQ Consumer. It needs to be a thread because it
- * is started and managed by an analysis server application.
+ * Worker is a user of RabbitMQ Consumer. It needs to be a thread because it is
+ * started and managed by an analysis server application.
  * 
  * @author Yoichi
- * 
+ * @see RPC server code:
+ *      {http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
+ * @see Round-robin workers: {@link http
+ *      ://www.rabbitmq.com/tutorials/tutorial-two-java.html}
  */
 public class AnalysisWorker implements Runnable
 {
@@ -32,20 +35,27 @@ public class AnalysisWorker implements Runnable
 	private String rpcQueueName = "pals_analysis";
 	private static final String EXCHANGE = "";
 	private static final boolean DURABLE = true;
-	private static final boolean NOT_EXCLUSIVE = false;
-	private static final boolean AUTO_DELETE = true;
+	private static final boolean NOT_EXCLUSIVE = false; // i.e. shared
+	private static final boolean NOT_AUTO_DELETE = false;
 	private static final Map<String, Object> NO_ARGUMENT = null;
 	/** expecting explicit acknowledgment */
 	private static final boolean NOT_AUTO_ACKNOWLEDGE = false;
 	private static final long SLEEP_DURATION = 100;
+	private static final boolean NOT_MULTIPLE = false;
+	private static final boolean DO_REQUEUE = true;
 
 	protected boolean isRunning = false;
 	private String workerId;
+	private String inputDataDirPath;
+	private String outputDataDirPath;
 
-	public AnalysisWorker(String workerId, String rpcQueueName)
+	public AnalysisWorker(String workerId, String rpcQueueName,
+			String inputDataDirPath, String outputDataDirPath)
 	{
 		this.workerId = workerId;
 		this.rpcQueueName = rpcQueueName;
+		this.inputDataDirPath = inputDataDirPath;
+		this.outputDataDirPath = outputDataDirPath;
 	}
 
 	public void init()
@@ -74,7 +84,7 @@ public class AnalysisWorker implements Runnable
 			channel = connection.createChannel();
 
 			channel.queueDeclare(rpcQueueName, DURABLE, NOT_EXCLUSIVE,
-					AUTO_DELETE, NO_ARGUMENT);
+					NOT_AUTO_DELETE, NO_ARGUMENT);
 
 			channel.basicQos(1);
 
@@ -88,14 +98,19 @@ public class AnalysisWorker implements Runnable
 			while (this.isRunning)
 			{
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+				long deliveryTag = delivery.getEnvelope().getDeliveryTag();
 				try
 				{
 					processDelivery(channel, delivery);
+					// Notify the queue that it has processed the message
+					// successfully.
+					channel.basicAck(deliveryTag, NOT_MULTIPLE);
 				}
 				catch (MessageParserException ignore)
 				{
 					// This should be from a bug in the message parser code
 					ignore.printStackTrace();
+					channel.basicReject(deliveryTag, DO_REQUEUE);
 				}
 				try
 				{
@@ -157,7 +172,7 @@ public class AnalysisWorker implements Runnable
 		BasicProperties replyProps = new BasicProperties.Builder()
 				.correlationId(props.getCorrelationId()).build();
 
-		AnalysisMessageParser parser = new AnalysisMessageParser();
+		AnalysisMessageParser parser = new AnalysisMessageParserJackson();
 
 		AnalysisRequest request = null;
 		Analyser analyser = null;
@@ -176,7 +191,8 @@ public class AnalysisWorker implements Runnable
 
 			analyser = new AnalyserImpl();
 
-			reply = analyser.analyse(request);
+			reply = analyser.analyse(request, inputDataDirPath,
+					outputDataDirPath);
 
 			response = parser.serializeReply(contentType, reply);
 		}

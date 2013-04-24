@@ -6,6 +6,15 @@ import org.pals.analysis.request.AnalysisRequest;
 
 public class EmpBenchmarkHandler implements RequestHandler
 {
+	private String inputDataDirPath;
+	private String outputDataDirPath;
+
+	public EmpBenchmarkHandler(String inputDataDirPath, String outputDataDirPath)
+	{
+		this.inputDataDirPath = inputDataDirPath;
+		this.outputDataDirPath = outputDataDirPath;
+	}
+
 	public AnalysisReply handleRequest(AnalysisRequest request)
 			throws AnalysisException
 	{

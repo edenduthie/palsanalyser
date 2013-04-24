@@ -1,8 +1,9 @@
 package org.pals.analysis.request;
+
 /**
  * 
  * @author Yoichi
- *
+ * 
  */
 public class AnalysisException extends Exception
 {

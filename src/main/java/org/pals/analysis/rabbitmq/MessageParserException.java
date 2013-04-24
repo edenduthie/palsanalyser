@@ -1,8 +1,9 @@
 package org.pals.analysis.rabbitmq;
+
 /**
  * 
  * @author Yoichi
- *
+ * 
  */
 public class MessageParserException extends Exception
 {

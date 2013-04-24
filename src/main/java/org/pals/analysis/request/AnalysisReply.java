@@ -2,10 +2,11 @@ package org.pals.analysis.request;
 
 import java.util.Map;
 import java.util.UUID;
+
 /**
  * 
  * @author Yoichi
- *
+ * 
  */
 public class AnalysisReply
 {
@@ -44,6 +45,16 @@ public class AnalysisReply
 	public void setRequestId(UUID requestId)
 	{
 		this.requestId = requestId;
+	}
+
+	public Status getStatus()
+	{
+		return status;
+	}
+
+	public void setStatus(Status status)
+	{
+		this.status = status;
 	}
 
 	public Map<String, Object> getAnalysisResults()

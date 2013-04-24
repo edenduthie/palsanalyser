@@ -12,6 +12,7 @@ import org.pals.analysis.request.AnalysisRequest;
  */
 public interface Analyser
 {
-	abstract public AnalysisReply analyse(AnalysisRequest request)
+	abstract public AnalysisReply analyse(AnalysisRequest request,
+			String inputDataDirPath, String outputDataDirPath)
 			throws AnalysisException;
 }

@@ -3,10 +3,11 @@ package org.pals.analysis.request;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+
 /**
  * 
  * @author Yoichi
- *
+ * 
  */
 public class AnalysisRequest
 {

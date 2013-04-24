@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
@@ -21,8 +20,9 @@ import javax.servlet.http.HttpServlet;
  * Therefore, this server can be run in the same JVM as that runs clients or in
  * an independent JVM. Clients should send messages to the Channel directly. In
  * addition, the RabbitMQ server should be installed on the localhost and be
- * running. Note: The number of workers is defined in the web.xml.
- * TODO: The number of workers may be changed at runtime.
+ * running. Note: The number of workers is defined in the web.xml. TODO: The
+ * number of workers may be changed at runtime. TODO: This class should be a
+ * singleton, unless queue name can change per instance.
  * 
  * @author Yoichi
  * 
@@ -32,10 +32,17 @@ public class AnalysisServlet extends HttpServlet
 	private final static Logger LOGGER = Logger.getLogger(AnalysisServlet.class
 			.getName());
 	private static final long serialVersionUID = -1975361388372623587L;
-	public static final String RPC_QUEUE_NAME = "pals_analysis";
-	private static final int DEFAULT_NUMOFWORKERS = 4;
-	private static final long SLEEP_DURATION = 10000;
-	private static boolean isRunningAsMain = false;
+	private static long SLEEP_DURATION = 10000;
+
+	private boolean isRunningAsMain = false;
+	private boolean isRunningAsServlet = true;
+
+	// default values
+	// TODO: These may be set by using IoC
+	private String rpcQueueName = "pals_analysis";
+	private String inputDataDirPath = "/tmp/palsAnalyser/input";
+	private String outputDataDirPath = "/tmp/palsAnalyser/output";
+	private int numOfWorkers = 4;
 
 	private List<Thread> threads;
 	private List<AnalysisWorker> workers;
@@ -47,14 +54,15 @@ public class AnalysisServlet extends HttpServlet
 	 */
 	public static void main(String[] argv)
 	{
-		AnalysisServlet.isRunningAsMain = true;
 		AnalysisServlet me = new AnalysisServlet();
+		me.isRunningAsMain = true;
+		me.isRunningAsServlet = false;
 		try
 		{
 			me.init();
 
 			// It must keep running if it is not a Servlet
-			while (AnalysisServlet.isRunningAsMain)
+			while (me.isRunningAsMain)
 			{
 				try
 				{
@@ -63,7 +71,7 @@ public class AnalysisServlet extends HttpServlet
 				catch (InterruptedException e)
 				{
 					LOGGER.info("server is to terminate");
-					AnalysisServlet.isRunningAsMain = false;					
+					me.isRunningAsMain = false;
 				}
 			}
 		}
@@ -77,9 +85,9 @@ public class AnalysisServlet extends HttpServlet
 		}
 	}
 
-	public static void stopMain()
+	public void stopMain()
 	{
-		AnalysisServlet.isRunningAsMain = false;
+		this.isRunningAsMain = false;
 	}
 
 	/**
@@ -97,13 +105,12 @@ public class AnalysisServlet extends HttpServlet
 		if (this.threads == null) this.threads = new ArrayList<Thread>();
 		if (this.workers == null) this.workers = new ArrayList<AnalysisWorker>();
 
-		int numOfWorkers = findNumOfWorkers();
-
-		for (int i = 0; i < numOfWorkers; i++)
+		for (int i = 0; i < this.numOfWorkers; i++)
 		{
 			// worker is a Runnable
 			String workerId = String.valueOf(i);
-			AnalysisWorker worker = new AnalysisWorker(workerId, RPC_QUEUE_NAME);
+			AnalysisWorker worker = new AnalysisWorker(workerId, rpcQueueName,
+					inputDataDirPath, outputDataDirPath);
 			workers.add(worker);
 			worker.init();
 			// Create a new thread with the worker
@@ -112,27 +119,15 @@ public class AnalysisServlet extends HttpServlet
 			threads.add(thread);
 			LOGGER.info("workerId=" + workerId + " created and started");
 		}
+
 		super.init();
-	}
-
-	private int findNumOfWorkers()
-	{
-		int numOfWorkers = DEFAULT_NUMOFWORKERS;
-
-		ServletConfig config = getServletConfig();
-		String numOfWorkersStr = null;
-		if (config != null) numOfWorkersStr = config
-				.getInitParameter("numOfWorkers");
-			
-		if (numOfWorkersStr != null) numOfWorkers = Integer
-				.parseInt(numOfWorkersStr);
-
-		return numOfWorkers;
 	}
 
 	@Override
 	public void destroy()
 	{
+		if (this.isRunningAsMain) stopMain();
+
 		for (Object o : workers)
 		{
 			AnalysisWorker worker = (AnalysisWorker) o;
@@ -152,14 +147,81 @@ public class AnalysisServlet extends HttpServlet
 			 * threads should have terminated normally. If they have not,
 			 * however, it may be necessary to interrupt them
 			 */
-			thread.interrupt(); // stop the sleeping loop so the thread can terminate as normal
+			thread.interrupt(); // stop the sleeping loop so the thread can
+								// terminate as normal
 			thread = null;
-			LOGGER.info("[thread " + threadName + "] thread interrupted and made to null");
+			LOGGER.info("[thread " + threadName
+					+ "] thread interrupted and made to null");
 		}
 		threads.clear(); // same as above
 		threads = null;
 		LOGGER.info("references to all threads are removed");
 
 		super.destroy();
+	}
+
+	public boolean isRunningAsMain()
+	{
+		return isRunningAsMain;
+	}
+
+	public void setRunningAsMain(boolean isRunningAsMain)
+	{
+		this.isRunningAsMain = isRunningAsMain;
+	}
+
+	public boolean isRunningAsServlet()
+	{
+		return isRunningAsServlet;
+	}
+
+	public void setRunningAsServlet(boolean isRunningAsServlet)
+	{
+		this.isRunningAsServlet = isRunningAsServlet;
+	}
+
+	public int getNumOfWorkers()
+	{
+		return numOfWorkers;
+	}
+
+	public void setNumOfWorkers(int numOfWorkers)
+	{
+		this.numOfWorkers = numOfWorkers;
+	}
+
+	public static long getSleepDuration()
+	{
+		return SLEEP_DURATION;
+	}
+
+	public String getRpcQueueName()
+	{
+		return rpcQueueName;
+	}
+
+	public void setRpcQueueName(String rpcQueueName)
+	{
+		this.rpcQueueName = rpcQueueName;
+	}
+
+	public static long getSLEEP_DURATION()
+	{
+		return SLEEP_DURATION;
+	}
+
+	public static void setSLEEP_DURATION(long sLEEP_DURATION)
+	{
+		SLEEP_DURATION = sLEEP_DURATION;
+	}
+
+	public String getInputDataDirPath()
+	{
+		return inputDataDirPath;
+	}
+
+	public void setInputDataDirPath(String inputDataDirPath)
+	{
+		this.inputDataDirPath = inputDataDirPath;
 	}
 }

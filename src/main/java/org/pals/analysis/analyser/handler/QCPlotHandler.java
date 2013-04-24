@@ -6,6 +6,11 @@ import org.pals.analysis.request.AnalysisRequest;
 
 public class QCPlotHandler implements RequestHandler
 {
+	public QCPlotHandler(String inputDataDirPath, String outputDataDirPath)
+	{
+		// TODO Auto-generated constructor stub
+	}
+
 	public AnalysisReply handleRequest(AnalysisRequest request)
 			throws AnalysisException
 	{

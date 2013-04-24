@@ -6,7 +6,16 @@ import org.pals.analysis.request.AnalysisRequest;
 
 public class BenchPlotHandler implements RequestHandler
 {
-	public AnalysisReply handleRequest(AnalysisRequest request)
+	private String inputDataDirPath;
+	private String outputDataDirPath;
+
+	public BenchPlotHandler(String inputDataDirPath, String outputDataDirPath)
+	{
+		this.inputDataDirPath = inputDataDirPath;
+		this.outputDataDirPath = outputDataDirPath;
+	}
+
+	public AnalysisReply handleRequest(AnalysisRequest requests)
 			throws AnalysisException
 	{
 		// TODO Auto-generated method stub
