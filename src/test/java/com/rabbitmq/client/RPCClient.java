@@ -10,7 +10,7 @@ import java.util.UUID;
  * An example client code from RabbitMQ
  * It dies when it receives the reply.
  * @author rabbitmq
- *
+ * @see {@link http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
  */
 public class RPCClient
 {

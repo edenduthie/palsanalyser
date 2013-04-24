@@ -9,7 +9,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * An example server code from RabbitMQ
  * The server waits forever, so kill it to terminate.
  * @author rabbitmq
- *
+ * @see {@link http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
  */
 
 public class RPCServer
