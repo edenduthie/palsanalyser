@@ -1,12 +1,8 @@
 package org.pals.analysis.rabbitmq;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.FileChannel;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +25,9 @@ import com.rabbitmq.client.QueueingConsumer;
  * This sends only one request and wait only for the reply to the request.
  * 
  * Important: Copy the test files into outputDataDirPath directory before
- * testing. The files will be sent to server and the server should delete them.
- * Client receives output files from the server. The client should delete them.
+ * testing. The files will be sent to server and the server will delete them.
+ * Client receives output files from the server. The client should delete them
+ * after checking whether it has received them.
  * 
  * @author Yoichi
  * @see RPC server code:
@@ -149,7 +146,7 @@ public class TestAnalysisClient
 			System.out.println("[analysis client] sending " + requestMsg);
 			analysisClient.call(corrId, requestMsg);
 
-			// client can wait for the delivery on a separate thread
+			// client could wait for the delivery on a separate thread
 			QueueingConsumer.Delivery delivery = analysisClient
 					.waitForDelivery(corrId);
 

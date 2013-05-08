@@ -1,10 +1,5 @@
 package org.pals.analysis.rabbitmq;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
-import org.testng.Assert;
-import org.testng.AssertJUnit;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
@@ -14,6 +9,7 @@ import javax.servlet.ServletException;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
+import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -30,16 +26,18 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * TestNG class that will test the client's analysis server by sending request
- * and receiving reply over RabbitMQ. It is a client to the server, but first
- * it runs the analysis server which runs the workers that await for
- * messages from the RabbitMQ. In real application, the client and server would
- * reside in different JVM.
+ * and receiving reply over RabbitMQ. It is a client to the server, but first it
+ * runs the analysis server which runs the workers that await for messages from
+ * the RabbitMQ. In real application, the client and server would reside in
+ * different JVM.
  * 
  * XXX: This is still work-in-progress
  * 
  * @author Yoichi
- * @see RPC server code: {http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
- * @see Round-robin workers: {@link http://www.rabbitmq.com/tutorials/tutorial-two-java.html}
+ * @see RPC server code:
+ *      {http://www.rabbitmq.com/tutorials/tutorial-six-java.html}
+ * @see Round-robin workers: {@link http
+ *      ://www.rabbitmq.com/tutorials/tutorial-two-java.html}
  */
 public class AnalysisRequestTest
 {
@@ -49,7 +47,8 @@ public class AnalysisRequestTest
 	private static final String REQUEST_QUEUE_NAME = "pals_analysis";
 	private static final String EXCHANGE = "";
 	private static final String ROUTING_KEY = REQUEST_QUEUE_NAME;
-	private static final boolean NOT_AUTO_ACKN = false; // server needs acknowledgment
+	private static final boolean NOT_AUTO_ACKN = false; // server needs
+														// acknowledgment
 
 	private String replyQueueName; // replyQueueName is set when requestQeueu is
 									// set

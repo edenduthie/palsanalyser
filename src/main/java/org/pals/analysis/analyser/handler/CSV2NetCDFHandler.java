@@ -16,16 +16,25 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import javax.script.ScriptException;
+
+import org.pals.analysis.analyser.handler.engine.AnalysisREngine;
+import org.pals.analysis.analyser.handler.engine.CSV2NetCDFEngine;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
 
 /**
- * Handler retrieves the remote file and parameters and pass them to the
- * analysis method. It also pass back the results as a reply. Note: R can
- * read/delete files using URLs but this layer handles copying/deleting files.
- * This is to leave R scripts free from such remote client/server needs. Such
- * are not essential to analysis.
+ * A Handler knows what needs to be done with the analysis parameters and sets
+ * up an environment before it hands over the analysis to an analysisExecutor.
+ * 
+ * CSV2NetCDFHandler retrieves the CSV remote file and passes it and the other
+ * parameters to the CSV2NetCDF analysisExecutor. It also passes back the
+ * results as a reply. Note: R script used in the analysisExecutor
+ * implementation can read/delete files using URLs but this layer handles
+ * copying/deleting files. This is to leave the analysisExecutor free from such
+ * remote client/server related operations. Such matters are not essential to R
+ * analysis script.
  * 
  * It implements only file://localhost/ URL (or without host). If client and
  * server are on different hosts, it may be better to use URLs other than
@@ -41,7 +50,10 @@ public class CSV2NetCDFHandler implements RequestHandler
 	private final static Logger LOGGER = Logger
 			.getLogger(CSV2NetCDFHandler.class.getName());
 
+	public static final String FUNCTION_NAME = "csv2NetCDF";
 	public static final String OBS_CSV = "obsCSV";
+	public static final String OBS_FLUX = "obsFlux";
+	public static final String OBS_MET = "obsMet";
 	public static final String USER_NAME = "userName";
 	public static final String DATA_SET_NAME = "dataSetName";
 	public static final String DATA_SET_VERSION_NAME = "dataSetVersionName";
@@ -50,13 +62,18 @@ public class CSV2NetCDFHandler implements RequestHandler
 	public static final String ELEVATION = "elevation";
 	public static final String TOWER_HEIGHT = "towerHeight";
 	public static final String FILE_PROTOCOL = "file";
-	public static final String FLUX_FILE_SUFFIX = "_flux.nc";
-	public static final String MET_FILE_SUFFIX = "_met.nc";
+	public static final String HOST = null;
+	public static final String CVS_FILE_SUFFIX = ".csv";
+	public static final String FLUX_FILE_SUFFIX = ".flux.nc";
+	public static final String MET_FILE_SUFFIX = ".met.nc";
 
 	private Map<String, Object> analysisArguments;
 
 	private String inputDataDirPath;
 	private String outputDataDirPath;
+
+	// This has to be set before this instance can be used
+	private CSV2NetCDFEngine engine;
 
 	public CSV2NetCDFHandler(String inputDataDirPath, String outputDataDirPath)
 	{
@@ -91,7 +108,7 @@ public class CSV2NetCDFHandler implements RequestHandler
 			remoteFileURL = new URL(obsCsvURLStr);
 			String protocol = remoteFileURL.getProtocol();
 			/**
-			 * Currently, it handles only file:// URLs
+			 * Currently, it handles only 'file://' URLs
 			 */
 			if (FILE_PROTOCOL.equals(protocol))
 			{
@@ -102,10 +119,10 @@ public class CSV2NetCDFHandler implements RequestHandler
 			else
 				throw new AnalysisException("unknown protocol: " + protocol);
 
-			outputFileURLs = convertCSV2NetCDFWithR(localCSVFileURL,
-					this.outputDataDirPath, userName, dataSetName,
-					dataSetVersionName, longitude, latitude, elevation,
-					towerHeight);
+			outputFileURLs = convertCSV2NetCDF(localCSVFileURL,
+					this.outputDataDirPath, requestIdStr, userName,
+					dataSetName, dataSetVersionName, longitude, latitude,
+					elevation, towerHeight);
 		}
 
 		catch (MalformedURLException e)
@@ -124,9 +141,18 @@ public class CSV2NetCDFHandler implements RequestHandler
 	}
 
 	/**
-	 * Reads the input file from the inputDataDir and makes output files in the
-	 * outputDataDir. The input file is deleted after it is processed. The
-	 * output files will be deleted by the client.
+	 * The role of this method is to run the analysisEngine. The analysisEngine
+	 * runs the analysis implementation, which will read the localCSVFileURL and
+	 * try to output outcome to specified URLs. It expects the engine to throw an
+	 * exception if it fails to produce output files.
+	 * 
+	 * @param towerHeight
+	 * @param elevation2
+	 * @param latitude2
+	 * @param longitude2
+	 * @param dataSetVersionName
+	 * @param dataSetName
+	 * @param userName
 	 * 
 	 * @param localCSVFile
 	 * @param userName
@@ -138,19 +164,44 @@ public class CSV2NetCDFHandler implements RequestHandler
 	 * @param towerHeight
 	 * @param towerHeight2
 	 * @return
+	 * @throws AnalysisException
+	 * @throws ScriptException
 	 */
-	private Map<String, Object> convertCSV2NetCDFWithR(URL localCSVFileURL,
-			String userName, String dataSetName, String dataSetVersionName,
-			String longitude2, String latitude2, String elevation2,
-			String towerHeight, String towerHeight2)
+	private Map<String, Object> convertCSV2NetCDF(URL localCSVFileURL,
+			String outputDir, String requestIdStr, String userName,
+			String dataSetName, String dataSetVersionName, String longitude,
+			String latitude, String elevation, String towerHeight)
+			throws AnalysisException
 	{
-		// XXX WORK_IN_PROGRESS Auto-generated method stub
-		return null;
+		URL fluxNetCDFURL = null;
+		URL metNetCDFURL = null;
+		try
+		{
+			fluxNetCDFURL = new URL(FILE_PROTOCOL, HOST, outputDataDirPath
+					+ File.separator + requestIdStr + FLUX_FILE_SUFFIX);
+			metNetCDFURL = new URL(FILE_PROTOCOL, HOST, outputDataDirPath
+					+ File.separator + requestIdStr + MET_FILE_SUFFIX);
+		}
+		catch (MalformedURLException e)
+		{
+			throw new AnalysisException(e);
+		}
+
+		Map<String, Object> outputNetCDFFiles = null;
+		if (this.engine == null) this.engine = new CSV2NetCDFEngine();
+
+		outputNetCDFFiles = this.engine
+				.convertCSV2NetCDF(localCSVFileURL, fluxNetCDFURL,
+						metNetCDFURL, userName, dataSetName,
+						dataSetVersionName, longitude, latitude, elevation,
+						towerHeight);
+		return outputNetCDFFiles;
 	}
 
 	/**
-	 * This copies the client's file to a server file and deletes the server
-	 * file. It ignores the "host" part of the URL.
+	 * This copies the client's file to a server file and deletes the file on
+	 * the client. NOTE: It ignores the "host" part of the URL, since at present
+	 * it can't access another host other than the localhost.
 	 * 
 	 * TODO: When both files are on the local fs, the remote file just needs to
 	 * be moved/renamed.
@@ -170,7 +221,7 @@ public class CSV2NetCDFHandler implements RequestHandler
 		File inputFileDir = new File(inputDataDirPath);
 		if (!inputFileDir.exists()) inputFileDir.mkdirs();
 		String newFilePathStr = inputDataDirPath + File.separator + requestId
-				+ ".csv";
+				+ CVS_FILE_SUFFIX;
 		File newFile = new File(newFilePathStr);
 
 		String remoteFilePath = remoteFileURL.getPath();
@@ -204,7 +255,7 @@ public class CSV2NetCDFHandler implements RequestHandler
 			if (fileOutputStream != null) fileOutputStream.close();
 		}
 
-		URL newFileURL = new URL("file", "", newFile.getPath());
+		URL newFileURL = new URL(FILE_PROTOCOL, HOST, newFile.getPath());
 
 		return newFileURL;
 	}

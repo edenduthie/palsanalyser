@@ -15,9 +15,16 @@ import org.pals.analysis.request.AnalysisRequest;
  * switchboard to branch out to appropriate handlers. Currently the handlers are
  * hard-wired in this class. In the future, they may be dynamically wired as
  * beans. Interfaces may be used to allow dynamic wiring of handler
- * implementations. Note 1: Empirical benchmark is produced as asynchronous
- * request. Note 2: OBS*, MODEL* and BENCH* can be requested as asynchronous
- * requests.
+ * implementations.
+ * 
+ * All analysis requests could be passed to R server by a uniform way, e.g.,
+ * generating R statements to set arguments as R variables and then calling the
+ * a function to use them, without using Handlers. Handlers are needed, however,
+ * because there may be multiple outcome variables in the R scripts and Handlers
+ * will know what to package up in the replies.
+ * 
+ * Note 1: Empirical benchmark is produced as asynchronous request. Note 2:
+ * OBS*, MODEL* and BENCH* can be requested as asynchronous requests.
  * 
  * @author Yoichi
  */

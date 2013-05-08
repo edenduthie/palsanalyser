@@ -7,14 +7,10 @@
 	<servlet>
 		<servlet-name>AnalysisServlet</servlet-name>
 		<servlet-class>org.pals.analysis.rabbtimq.AnalysisServlet</servlet-class>
-		<init-param>
-			<param-name>numOfWorkers</param-name>
-			<param-value>4</param-value>
-		</init-param>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>AnalysisServlet</servlet-name>
-		<url-pattern>/analysis</url-pattern>
+		<url-pattern>/analyser</url-pattern>
 	</servlet-mapping>
 
 	<welcome-file-list>
