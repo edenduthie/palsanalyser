@@ -18,8 +18,8 @@ import java.util.logging.Logger;
 
 import javax.script.ScriptException;
 
-import org.pals.analysis.analyser.handler.engine.AnalysisREngine;
-import org.pals.analysis.analyser.handler.engine.CSV2NetCDFEngine;
+import org.pals.analysis.analyser.handler.dao.PalsREngine;
+import org.pals.analysis.analyser.handler.dao.CSV2NetCDFDao;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
@@ -50,7 +50,7 @@ public class CSV2NetCDFHandler implements RequestHandler
 	private final static Logger LOGGER = Logger
 			.getLogger(CSV2NetCDFHandler.class.getName());
 
-	public static final String FUNCTION_NAME = "csv2NetCDF";
+	public static final String FUNCTION_NAME = "ConvertSpreadsheetToNcdf";
 	public static final String OBS_CSV = "obsCSV";
 	public static final String OBS_FLUX = "obsFlux";
 	public static final String OBS_MET = "obsMet";
@@ -69,14 +69,17 @@ public class CSV2NetCDFHandler implements RequestHandler
 
 	private Map<String, Object> analysisArguments;
 
+	private PalsREngine palsREngine;
 	private String inputDataDirPath;
 	private String outputDataDirPath;
 
 	// This has to be set before this instance can be used
-	private CSV2NetCDFEngine engine;
-
-	public CSV2NetCDFHandler(String inputDataDirPath, String outputDataDirPath)
+	// TODO: This should be set by IoC
+	private CSV2NetCDFDao csv2NetCDFDao;
+	
+	public CSV2NetCDFHandler(PalsREngine palsREngine, String inputDataDirPath, String outputDataDirPath)
 	{
+		this.palsREngine = palsREngine;
 		this.inputDataDirPath = inputDataDirPath;
 		this.outputDataDirPath = outputDataDirPath;
 	}
@@ -143,8 +146,8 @@ public class CSV2NetCDFHandler implements RequestHandler
 	/**
 	 * The role of this method is to run the analysisEngine. The analysisEngine
 	 * runs the analysis implementation, which will read the localCSVFileURL and
-	 * try to output outcome to specified URLs. It expects the engine to throw an
-	 * exception if it fails to produce output files.
+	 * try to output outcome to specified URLs. It expects the engine to throw
+	 * an exception if it fails to produce output files.
 	 * 
 	 * @param towerHeight
 	 * @param elevation2
@@ -188,9 +191,20 @@ public class CSV2NetCDFHandler implements RequestHandler
 		}
 
 		Map<String, Object> outputNetCDFFiles = null;
-		if (this.engine == null) this.engine = new CSV2NetCDFEngine();
+		/*
+		 * The engine should be set in IoC so it does not have to know its
+		 * implementation or be created here with R_LIBS_USER
+		 */
+		if (this.csv2NetCDFDao == null) try
+		{
+			this.csv2NetCDFDao = new CSV2NetCDFDao(palsREngine);
+		}
+		catch (ScriptException e)
+		{
+			throw new AnalysisException(e);
+		}
 
-		outputNetCDFFiles = this.engine
+		outputNetCDFFiles = this.csv2NetCDFDao
 				.convertCSV2NetCDF(localCSVFileURL, fluxNetCDFURL,
 						metNetCDFURL, userName, dataSetName,
 						dataSetVersionName, longitude, latitude, elevation,
@@ -205,6 +219,9 @@ public class CSV2NetCDFHandler implements RequestHandler
 	 * 
 	 * TODO: When both files are on the local fs, the remote file just needs to
 	 * be moved/renamed.
+	 * 
+	 * TODO: Maybe the client file should be deleted only when the server
+	 * operation succeeds.
 	 * 
 	 * @param requestId
 	 * @param inputDataDirPath

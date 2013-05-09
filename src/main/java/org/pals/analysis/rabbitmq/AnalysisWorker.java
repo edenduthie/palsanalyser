@@ -232,7 +232,7 @@ public class AnalysisWorker implements Runnable
 		String analysisName = request.getAnalysisName();
 		Map<String, Object> analysisResults = new HashMap<String, Object>();
 		analysisResults.put("analysisName", analysisName);
-		analysisResults.put("error", e);
+		analysisResults.put("error", e.getMessage());
 		AnalysisReply reply = new AnalysisReply(RequestId, status,
 				analysisResults);
 		return reply;

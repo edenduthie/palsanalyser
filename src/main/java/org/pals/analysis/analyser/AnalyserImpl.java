@@ -1,11 +1,14 @@
 package org.pals.analysis.analyser;
 
+import javax.script.ScriptException;
+
 import org.pals.analysis.analyser.handler.BenchPlotHandler;
 import org.pals.analysis.analyser.handler.CSV2NetCDFHandler;
 import org.pals.analysis.analyser.handler.EmpBenchmarkHandler;
 import org.pals.analysis.analyser.handler.ModelPlotHandler;
 import org.pals.analysis.analyser.handler.ObsPlotHandler;
 import org.pals.analysis.analyser.handler.QCPlotHandler;
+import org.pals.analysis.analyser.handler.dao.PalsREngine;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
@@ -30,16 +33,28 @@ import org.pals.analysis.request.AnalysisRequest;
  */
 public class AnalyserImpl implements Analyser
 {
+	// PalsREngine should be created only once per analyser
+	private PalsREngine palsREngine = null;
+
 	public AnalysisReply analyse(AnalysisRequest request,
 			String inputDataDirPath, String outputDataDirPath)
 			throws AnalysisException
 	{
+		if (this.palsREngine == null) try
+		{
+			this.palsREngine = new PalsREngine();
+		}
+		catch (ScriptException e)
+		{
+			throw new AnalysisException(e);
+		}
+
 		AnalysisReply reply = null;
 		String analysisName = request.getAnalysisName();
 		if (AnalysisRequest.CVS2NETCDF.equals(analysisName))
 		{
-			CSV2NetCDFHandler handler = new CSV2NetCDFHandler(inputDataDirPath,
-					outputDataDirPath);
+			CSV2NetCDFHandler handler = new CSV2NetCDFHandler(palsREngine,
+					inputDataDirPath, outputDataDirPath);
 			reply = handler.handleRequest(request);
 		}
 		else
