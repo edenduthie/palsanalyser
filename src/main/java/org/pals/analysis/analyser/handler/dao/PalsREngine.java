@@ -24,7 +24,7 @@ public class PalsREngine
 {
 	private ScriptEngineManager factory;
 	private ScriptEngine engine;
-	private final static String R_LIBS_USER = "/root/r_libs_user/";
+	private final static String R_LIBS_USER = "/root/workspace";
 	private final static String PALSAPI_PKG = "palsapi";
 	private String rLibsUserPath = R_LIBS_USER;
 	private String palsAPIPkgName = PALSAPI_PKG;
