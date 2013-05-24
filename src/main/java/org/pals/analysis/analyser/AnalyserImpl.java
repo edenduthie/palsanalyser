@@ -2,6 +2,7 @@ package org.pals.analysis.analyser;
 
 import javax.script.ScriptException;
 
+import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.handler.BenchPlotHandler;
 import org.pals.analysis.analyser.handler.CSV2NetCDFHandler;
 import org.pals.analysis.analyser.handler.EmpBenchmarkHandler;
@@ -9,6 +10,7 @@ import org.pals.analysis.analyser.handler.ModelPlotHandler;
 import org.pals.analysis.analyser.handler.ObsPlotHandler;
 import org.pals.analysis.analyser.handler.QCPlotHandler;
 import org.pals.analysis.analyser.handler.dao.PalsREngine;
+import org.pals.analysis.rabbitmq.AnalysisServlet;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
@@ -33,6 +35,9 @@ import org.pals.analysis.request.AnalysisRequest;
  */
 public class AnalyserImpl implements Analyser
 {
+	private final static Logger LOGGER = Logger.getLogger(AnalysisServlet.class
+			.getName());
+
 	// PalsREngine should be created only once per analyser
 	private PalsREngine palsREngine = null;
 
@@ -55,7 +60,10 @@ public class AnalyserImpl implements Analyser
 		{
 			CSV2NetCDFHandler handler = new CSV2NetCDFHandler(palsREngine,
 					inputDataDirPath, outputDataDirPath);
+			
+			LOGGER.debug("calling CSV2NetCDFHandler");
 			reply = handler.handleRequest(request);
+			LOGGER.debug("returned from CSV2NetCDFHandler");
 		}
 		else
 			if (AnalysisRequest.QCPLOT.equals(analysisName))
