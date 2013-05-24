@@ -6,19 +6,25 @@ import java.util.Map;
 
 import javax.script.ScriptException;
 
+import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.handler.CSV2NetCDFHandler;
+import org.pals.analysis.rabbitmq.AnalysisServlet;
 import org.pals.analysis.request.AnalysisException;
 
 /**
  * This class is a data exchange layer between Java and R.
  * 
- * convertCSV2NetCDF is translated to R syntax.
+ * convertCSV2NetCDF() is translated to an R function call and executed.
  * 
  * @author Yoichi
  * 
  */
 public class CSV2NetCDFDao
 {
+	private final static Logger LOGGER = Logger.getLogger(CSV2NetCDFDao.class
+			.getName());
+	private final static String PALS_R_PACKAGE = "pals";
+
 	private PalsREngine palsREngine;
 	
 	/**
@@ -28,7 +34,7 @@ public class CSV2NetCDFDao
 	 */
 	public CSV2NetCDFDao(PalsREngine palsREngine) throws ScriptException
 	{
-		this.palsREngine = new PalsREngine();
+		this.palsREngine = palsREngine;
 	}
 	
 	public Map<String, Object> convertCSV2NetCDF(URL ovsCSVURL, URL obsFluxURL,
@@ -41,34 +47,54 @@ public class CSV2NetCDFDao
 		String rSentence = null;
 		try
 		{
-			palsREngine.eval(rSentence);			
-			rSentence = "library(palsapi)"; // this is not needed but just in case
-			palsREngine.eval(rSentence);			
+			rSentence = "library("+ PALS_R_PACKAGE + ")";
+			LOGGER.debug(rSentence);
+			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.OBS_CSV + "=\""
 					+ ovsCSVURL.toExternalForm() + "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.OBS_FLUX + "=\""
 					+ obsFluxURL.toExternalForm() + "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.OBS_MET + "=\""
 					+ obsMetURL.toExternalForm() + "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.USER_NAME + "=\"" + userName + "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
 			rSentence = CSV2NetCDFHandler.DATA_SET_NAME + "=\"" + dataSetName
 					+ "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.DATA_SET_VERSION_NAME + "=\""
 					+ dataSetVersionName + "\"";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.LONGITUDE + "=" + longitude;
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.LATITUDE + "=" + latitude;
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.ELEVATION + "=" + elevation;
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = CSV2NetCDFHandler.TOWER_HEIGHT + "=" + towerHeight;
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
+			
 			rSentence = "result<-" + CSV2NetCDFHandler.FUNCTION_NAME + "("
 					+ CSV2NetCDFHandler.OBS_CSV + ","
 					+ CSV2NetCDFHandler.OBS_FLUX + ","
@@ -80,6 +106,7 @@ public class CSV2NetCDFDao
 					+ CSV2NetCDFHandler.LATITUDE + ","
 					+ CSV2NetCDFHandler.ELEVATION + ","
 					+ CSV2NetCDFHandler.TOWER_HEIGHT + ")";
+			LOGGER.debug(rSentence);
 			palsREngine.eval(rSentence);
 			/*
 			 * It expects R to have thrown an exception if it failed to create
