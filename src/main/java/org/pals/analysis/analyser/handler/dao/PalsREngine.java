@@ -25,9 +25,9 @@ public class PalsREngine
 	private ScriptEngineManager factory;
 	private ScriptEngine engine;
 	private final static String R_LIBS_USER = "/root/workspace";
-	private final static String PALSAPI_PKG = "palsapi";
+	private final static String PALS_PKG = "pals";
 	private String rLibsUserPath = R_LIBS_USER;
-	private String palsAPIPkgName = PALSAPI_PKG;
+	private String palsPkgName = PALS_PKG;
 
 	/**
 	 * Creating a script engine is an expensive step
@@ -58,14 +58,14 @@ public class PalsREngine
 
 	public String getPalsAPIPkgName()
 	{
-		return palsAPIPkgName;
+		return palsPkgName;
 	}
 
-	public void setPalsAPIPkgName(String palsAPIPkgName) throws ScriptException
+	public void setPalsAPIPkgName(String palsPkgName) throws ScriptException
 	{
-		if (palsAPIPkgName == null || palsAPIPkgName == "")
+		if (palsPkgName == null || palsPkgName == "")
 		{
-			palsAPIPkgName = PALSAPI_PKG;
+			palsPkgName = PALS_PKG;
 		}
 
 		String rStatement;
@@ -73,9 +73,9 @@ public class PalsREngine
 		this.engine.eval(rStatement);
 		 rStatement = "library('pals',lib.loc='" + R_LIBS_USER + "')";
 		this.engine.eval(rStatement);
-		 rStatement = "library('" + palsAPIPkgName + "',lib.loc='" + R_LIBS_USER + "')";
+		 rStatement = "library('" + palsPkgName + "',lib.loc='" + R_LIBS_USER + "')";
 		this.engine.eval(rStatement);
-		this.palsAPIPkgName = palsAPIPkgName;
+		this.palsPkgName = palsPkgName;
 	}
 
 	/**
