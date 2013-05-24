@@ -2,10 +2,11 @@ package org.pals.analysis.rabbitmq;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+
+import org.apache.log4j.Logger;
 
 /**
  * A RabbitMQ version of the analysis server to start running workers. It can be

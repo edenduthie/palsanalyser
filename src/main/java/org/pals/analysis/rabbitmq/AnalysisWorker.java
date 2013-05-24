@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Logger;
 
+import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.Analyser;
 import org.pals.analysis.analyser.AnalyserImpl;
+import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisReply.Status;
 import org.pals.analysis.request.AnalysisRequest;
@@ -130,8 +131,8 @@ public class AnalysisWorker implements Runnable
 		}
 		catch (IOException e)
 		{
-			LOGGER.severe("[worker " + this.workerId + "] IOException");
-			LOGGER.severe(e.getMessage());
+			LOGGER.error("[worker " + this.workerId + "] IOException");
+			LOGGER.error(e.getMessage());
 		}
 		finally
 		{
@@ -164,8 +165,8 @@ public class AnalysisWorker implements Runnable
 	 * @throws MessageParserException
 	 */
 	private void processDelivery(Channel channel,
-			QueueingConsumer.Delivery delivery) throws IOException,
-			MessageParserException
+			QueueingConsumer.Delivery delivery) throws IOException, MessageParserException
+			
 	{
 		BasicProperties props = delivery.getProperties();
 		String contentType = props.getContentType();
@@ -181,7 +182,8 @@ public class AnalysisWorker implements Runnable
 		try
 		{
 			String message = new String(delivery.getBody(), "UTF-8");
-
+			LOGGER.debug("[worker " + this.workerId + "] message: " + message);
+			
 			request = parser.deserializeRequest(contentType, message);
 
 			String reqId = request.getRequestId().toString();
@@ -194,25 +196,19 @@ public class AnalysisWorker implements Runnable
 			reply = analyser.analyse(request, inputDataDirPath,
 					outputDataDirPath);
 
-			response = parser.serializeReply(contentType, reply);
+			response = parser.serializeReply(contentType, reply);			
 		}
-		catch (Exception e)
+		catch (AnalysisException e)
 		{
-			/**
-			 * worker errors has to be returned to the client but other server
-			 * errors have to be thrown as exception
-			 */
 			String eMsg = e.getMessage();
-			LOGGER.warning("[worker " + this.workerId + "] " + eMsg);
+			LOGGER.warn("[worker " + this.workerId + "] ERROR: " + eMsg);
 			reply = createReplyFromException(request, e);
 			response = parser.serializeReply(contentType, reply);
 		}
-		finally
-		{
-			channel.basicPublish(EXCHANGE, props.getReplyTo(), replyProps,
-					response.getBytes("UTF-8"));
-			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		}
+		
+		channel.basicPublish(EXCHANGE, props.getReplyTo(), replyProps,
+				response.getBytes("UTF-8"));
+		channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 	}
 
 	/**
