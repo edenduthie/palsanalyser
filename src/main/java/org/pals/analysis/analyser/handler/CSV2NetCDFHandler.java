@@ -4,22 +4,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import javax.script.ScriptException;
 
-import org.pals.analysis.analyser.handler.dao.PalsREngine;
+import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.handler.dao.CSV2NetCDFDao;
+import org.pals.analysis.analyser.handler.dao.PalsREngine;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
@@ -50,7 +45,7 @@ public class CSV2NetCDFHandler implements RequestHandler
 	private final static Logger LOGGER = Logger
 			.getLogger(CSV2NetCDFHandler.class.getName());
 
-	public static final String FUNCTION_NAME = "ConvertSpreadsheetToNcdf";
+	public static final String FUNCTION_NAME = "convertSpreadsheetToNcdf";
 	public static final String OBS_CSV = "obsCSV";
 	public static final String OBS_FLUX = "obsFlux";
 	public static final String OBS_MET = "obsMet";
@@ -87,6 +82,8 @@ public class CSV2NetCDFHandler implements RequestHandler
 	public AnalysisReply handleRequest(AnalysisRequest request)
 			throws AnalysisException
 	{
+		LOGGER.debug("handleRequest");
+		
 		AnalysisReply reply = null;
 
 		analysisArguments = request.getAnalysisArguments();
@@ -117,15 +114,18 @@ public class CSV2NetCDFHandler implements RequestHandler
 			{
 				localCSVFileURL = getFileViaFileProtocol(requestIdStr,
 						this.inputDataDirPath, remoteFileURL);
+				
+				outputFileURLs = convertCSV2NetCDF(localCSVFileURL,
+						this.outputDataDirPath, requestIdStr, userName,
+						dataSetName, dataSetVersionName, longitude, latitude,
+						elevation, towerHeight);
+				
+				// clean up when all succeeded
+				if (!deleteFileViaFileProtocol(localCSVFileURL)) throw new AnalysisException("filed to delete: " + localCSVFileURL.toExternalForm());
+				if (!deleteFileViaFileProtocol(remoteFileURL)) throw new AnalysisException("filed to delete: " + localCSVFileURL.toExternalForm());
 			}
-
 			else
 				throw new AnalysisException("unknown protocol: " + protocol);
-
-			outputFileURLs = convertCSV2NetCDF(localCSVFileURL,
-					this.outputDataDirPath, requestIdStr, userName,
-					dataSetName, dataSetVersionName, longitude, latitude,
-					elevation, towerHeight);
 		}
 
 		catch (MalformedURLException e)
@@ -141,6 +141,14 @@ public class CSV2NetCDFHandler implements RequestHandler
 		reply.setStatus(AnalysisReply.Status.NORMAL);
 		reply.setAnalysisResults(outputFileURLs);
 		return reply;
+	}
+
+	private boolean deleteFileViaFileProtocol(URL fileUrl)
+	{
+		String filePath = fileUrl.getPath();
+		File file = new File(filePath);
+		boolean isDelete = file.delete();
+		return isDelete;
 	}
 
 	/**
@@ -176,6 +184,8 @@ public class CSV2NetCDFHandler implements RequestHandler
 			String latitude, String elevation, String towerHeight)
 			throws AnalysisException
 	{
+		LOGGER.debug("convertCSV2NetCDF()");
+		
 		URL fluxNetCDFURL = null;
 		URL metNetCDFURL = null;
 		try
@@ -220,9 +230,6 @@ public class CSV2NetCDFHandler implements RequestHandler
 	 * TODO: When both files are on the local fs, the remote file just needs to
 	 * be moved/renamed.
 	 * 
-	 * TODO: Maybe the client file should be deleted only when the server
-	 * operation succeeds.
-	 * 
 	 * @param requestId
 	 * @param inputDataDirPath
 	 * @param remoteFileURL
@@ -248,7 +255,6 @@ public class CSV2NetCDFHandler implements RequestHandler
 		FileOutputStream fileOutputStream = null;
 		FileChannel inputChannel = null;
 		FileChannel outputChannel = null;
-		boolean isDeleted = false;
 		try
 		{
 			fileInputStream = new FileInputStream(remoteFile);
@@ -259,16 +265,12 @@ public class CSV2NetCDFHandler implements RequestHandler
 			long position = 0;
 			outputChannel.transferFrom(inputChannel, position,
 					inputChannel.size());
-
-			isDeleted = remoteFile.delete();
-			if (!isDeleted) LOGGER.warning("cound not delete: "
-					+ remoteFile.toURI());
 		}
 		finally
 		{
-			inputChannel.close();
+			if (inputChannel != null) inputChannel.close();
 			if (fileInputStream != null) fileInputStream.close();
-			outputChannel.close();
+			if (outputChannel != null) outputChannel.close();
 			if (fileOutputStream != null) fileOutputStream.close();
 		}
 
