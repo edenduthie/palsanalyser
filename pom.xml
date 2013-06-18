@@ -53,6 +53,11 @@
 			<artifactId>jackson-annotations</artifactId>
 			<version>2.1.4</version>
 		</dependency>
+		<dependency>
+			<groupId>net.rforge</groupId>
+			<artifactId>Rserve</artifactId>
+			<version>0.6-8</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>palsanalyser</finalName>
