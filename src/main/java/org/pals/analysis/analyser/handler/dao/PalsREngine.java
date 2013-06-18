@@ -18,7 +18,7 @@ import javax.script.ScriptException;
  * TODO: Package method should be load/unload, rather than set/get.
  * 
  * @author Yoichi
- * 
+ * @deprecated
  */
 public class PalsREngine
 {
@@ -76,18 +76,5 @@ public class PalsREngine
 		 rStatement = "library('" + palsPkgName + "',lib.loc='" + R_LIBS_USER + "')";
 		this.engine.eval(rStatement);
 		this.palsPkgName = palsPkgName;
-	}
-
-	/**
-	 * TODO: In ScriptEngine eval() is overloaded
-	 * 
-	 * @param statement
-	 * @return
-	 * @throws ScriptException
-	 */
-	public Object eval(String statement) throws ScriptException
-	{
-		Object result = this.engine.eval(statement);
-		return result;
 	}
 }

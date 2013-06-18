@@ -1,5 +1,6 @@
 package org.pals.analysis.rabbitmq;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,16 +48,16 @@ public class AnalysisWorker implements Runnable
 
 	protected boolean isRunning = false;
 	private String workerId;
-	private String inputDataDirPath;
-	private String outputDataDirPath;
+	private File inputDataDir;
+	private File outputDataDir;
 
 	public AnalysisWorker(String workerId, String rpcQueueName,
-			String inputDataDirPath, String outputDataDirPath)
+			File inputDataDir, File outputDataDir)
 	{
 		this.workerId = workerId;
 		this.rpcQueueName = rpcQueueName;
-		this.inputDataDirPath = inputDataDirPath;
-		this.outputDataDirPath = outputDataDirPath;
+		this.inputDataDir = inputDataDir;
+		this.outputDataDir = outputDataDir;
 	}
 
 	public void init()
@@ -193,8 +194,8 @@ public class AnalysisWorker implements Runnable
 
 			analyser = new AnalyserImpl();
 
-			reply = analyser.analyse(request, inputDataDirPath,
-					outputDataDirPath);
+			reply = analyser.analyse(request, inputDataDir,
+					outputDataDir);
 
 			response = parser.serializeReply(contentType, reply);			
 		}

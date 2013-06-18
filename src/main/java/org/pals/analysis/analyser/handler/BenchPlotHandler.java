@@ -1,5 +1,8 @@
 package org.pals.analysis.analyser.handler;
 
+import java.io.File;
+
+import org.pals.analysis.analyser.handler.dao.PalsRserveEngine;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
@@ -9,10 +12,10 @@ public class BenchPlotHandler implements RequestHandler
 	private String inputDataDirPath;
 	private String outputDataDirPath;
 
-	public BenchPlotHandler(String inputDataDirPath, String outputDataDirPath)
+	public BenchPlotHandler(PalsRserveEngine palsRserveEngine,
+			File inputDataDir, File outputDataDir)
 	{
-		this.inputDataDirPath = inputDataDirPath;
-		this.outputDataDirPath = outputDataDirPath;
+		// TODO Auto-generated constructor stub
 	}
 
 	public AnalysisReply handleRequest(AnalysisRequest requests)

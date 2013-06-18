@@ -1,5 +1,6 @@
 package org.pals.analysis.rabbitmq;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,8 +111,10 @@ public class AnalysisServlet extends HttpServlet
 		{
 			// worker is a Runnable
 			String workerId = String.valueOf(i);
+			File inputDataDir = new File(inputDataDirPath);
+			File outputDataDir = new File(outputDataDirPath);
 			AnalysisWorker worker = new AnalysisWorker(workerId, rpcQueueName,
-					inputDataDirPath, outputDataDirPath);
+					inputDataDir, outputDataDir);
 			workers.add(worker);
 			worker.init();
 			// Create a new thread with the worker

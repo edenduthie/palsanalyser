@@ -1,5 +1,7 @@
 package org.pals.analysis.analyser;
 
+import java.io.File;
+
 import javax.script.ScriptException;
 
 import org.apache.log4j.Logger;
@@ -10,6 +12,7 @@ import org.pals.analysis.analyser.handler.ModelPlotHandler;
 import org.pals.analysis.analyser.handler.ObsPlotHandler;
 import org.pals.analysis.analyser.handler.QCPlotHandler;
 import org.pals.analysis.analyser.handler.dao.PalsREngine;
+import org.pals.analysis.analyser.handler.dao.PalsRserveEngine;
 import org.pals.analysis.rabbitmq.AnalysisServlet;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
@@ -38,29 +41,23 @@ public class AnalyserImpl implements Analyser
 	private final static Logger LOGGER = Logger.getLogger(AnalysisServlet.class
 			.getName());
 
-	// PalsREngine should be created only once per analyser
-	private PalsREngine palsREngine = null;
+	// PalsREngine should be created only once per analyzer
+	private PalsRserveEngine palsRserveEngine = null;
 
-	public AnalysisReply analyse(AnalysisRequest request,
-			String inputDataDirPath, String outputDataDirPath)
-			throws AnalysisException
+	public AnalysisReply analyse(AnalysisRequest request, File inputDataDir,
+			File outputDataDir) throws AnalysisException
 	{
-		if (this.palsREngine == null) try
-		{
-			this.palsREngine = new PalsREngine();
-		}
-		catch (ScriptException e)
-		{
-			throw new AnalysisException(e);
-		}
+		if (this.palsRserveEngine == null)
+
+		this.palsRserveEngine = new PalsRserveEngine();
 
 		AnalysisReply reply = null;
 		String analysisName = request.getAnalysisName();
 		if (AnalysisRequest.CVS2NETCDF.equals(analysisName))
 		{
-			CSV2NetCDFHandler handler = new CSV2NetCDFHandler(palsREngine,
-					inputDataDirPath, outputDataDirPath);
-			
+			CSV2NetCDFHandler handler = new CSV2NetCDFHandler(
+					this.palsRserveEngine, inputDataDir, outputDataDir);
+
 			LOGGER.debug("calling CSV2NetCDFHandler");
 			reply = handler.handleRequest(request);
 			LOGGER.debug("returned from CSV2NetCDFHandler");
@@ -68,36 +65,39 @@ public class AnalyserImpl implements Analyser
 		else
 			if (AnalysisRequest.QCPLOT.equals(analysisName))
 			{
-				QCPlotHandler handler = new QCPlotHandler(inputDataDirPath,
-						outputDataDirPath);
+				QCPlotHandler handler = new QCPlotHandler(
+						this.palsRserveEngine, inputDataDir, outputDataDir);
 				reply = handler.handleRequest(request);
 			}
 			else
 				if (AnalysisRequest.EMPBENCH.equals(analysisName))
 				{
 					EmpBenchmarkHandler handler = new EmpBenchmarkHandler(
-							inputDataDirPath, outputDataDirPath);
+							this.palsRserveEngine, inputDataDir, outputDataDir);
 					reply = handler.handleRequest(request);
 				}
 				else
 					if (analysisName.startsWith(AnalysisRequest.OBS))
 					{
 						ObsPlotHandler handler = new ObsPlotHandler(
-								inputDataDirPath, outputDataDirPath);
+								this.palsRserveEngine,
+								inputDataDir, outputDataDir);
 						reply = handler.handleRequest(request);
 					}
 					else
 						if (analysisName.startsWith(AnalysisRequest.MODEL))
 						{
 							ModelPlotHandler handler = new ModelPlotHandler(
-									inputDataDirPath, outputDataDirPath);
+									this.palsRserveEngine, inputDataDir,
+									outputDataDir);
 							reply = handler.handleRequest(request);
 						}
 						else
 							if (analysisName.startsWith(AnalysisRequest.BENCH))
 							{
 								BenchPlotHandler handler = new BenchPlotHandler(
-										inputDataDirPath, outputDataDirPath);
+										this.palsRserveEngine, inputDataDir,
+										outputDataDir);
 								reply = handler.handleRequest(request);
 							}
 							else

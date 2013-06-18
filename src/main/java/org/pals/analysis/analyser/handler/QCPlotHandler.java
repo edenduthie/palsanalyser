@@ -1,12 +1,16 @@
 package org.pals.analysis.analyser.handler;
 
+import java.io.File;
+
+import org.pals.analysis.analyser.handler.dao.PalsRserveEngine;
 import org.pals.analysis.request.AnalysisException;
 import org.pals.analysis.request.AnalysisReply;
 import org.pals.analysis.request.AnalysisRequest;
 
-public class QCPlotHandler implements RequestHandler
+public class QCPlotHandler implements RequestHandler 
 {
-	public QCPlotHandler(String inputDataDirPath, String outputDataDirPath)
+	public QCPlotHandler(PalsRserveEngine palsRserveEngine, File inputDataDir,
+			File outputDataDir)
 	{
 		// TODO Auto-generated constructor stub
 	}
