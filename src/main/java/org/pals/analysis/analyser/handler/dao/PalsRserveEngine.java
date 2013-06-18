@@ -35,9 +35,14 @@ import org.rosuda.REngine.Rserve.RserveException;
  * </code>
  * </pre>
  * 
- * Never run Rserve as "root". Rserve is run at the startup time as a daemon on
- * Linux using start-stop-daemon. The config can also be set in /etc/RServ.conf
- * on Linux.
+ * The port number is passed on to this class.
+ * 
+ * Never run Rserve as "root".
+ * 
+ * On our production server, Rserve is run as a daemon by
+ * using start-stop-daemon.
+ * 
+ * The startup script is in /etc/initi.d and reads /etc/RServ.conf
  * 
  * @author Yoichi
  * 
