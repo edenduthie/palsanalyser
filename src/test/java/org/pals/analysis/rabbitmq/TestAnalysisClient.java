@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.handler.CSV2NetCDFHandler;
 import org.pals.analysis.request.AnalysisRequest;
 
@@ -37,6 +38,8 @@ import com.rabbitmq.client.QueueingConsumer;
  */
 public class TestAnalysisClient
 {
+	private final static Logger LOGGER = Logger.getLogger(AnalysisServlet.class
+			.getName());
 	// Default values
 	// TODO: These values may be changed or set by IoC
 	private static final String REQUEST_QUEUE_NAME = "pals_analysis";
@@ -52,8 +55,8 @@ public class TestAnalysisClient
 	private static final String I = File.separator;
 
 	// Test data locations for the client
-	private String inputDataDirPath = "/root/workspace/palsanalyser/tempClient/input";
-	private String outputDataDirPath = "/root/workspace/palsanalyser/tempClient/output";
+	private String inputDataDirPath = "/root/workspace-pals/palsanalyser/tempClient/input";
+	private String outputDataDirPath = "/root/workspace-pals/palsanalyser/tempClient/output";
 
 	private String inputDataFilePath = inputDataDirPath + I + CSV_FILE_NAME;
 	private static final String FILE_PROTOCOL = "file";
@@ -143,7 +146,7 @@ public class TestAnalysisClient
 			String corrId = UUID.randomUUID().toString();
 			String requestMsg = createRequestMsg();
 
-			System.out.println("[analysis client] sending " + requestMsg);
+			LOGGER.info("[analysis client] sending " + requestMsg);
 			analysisClient.call(corrId, requestMsg);
 
 			// client could wait for the delivery on a separate thread
@@ -151,7 +154,7 @@ public class TestAnalysisClient
 					.waitForDelivery(corrId);
 
 			String response = new String(delivery.getBody(), "UTF-8");
-			System.out.println("[analysis client] reply message '" + response
+			LOGGER.info("[analysis client] reply message '" + response
 					+ "'");
 
 			// TODO: Read server output files and delete them.
@@ -162,7 +165,7 @@ public class TestAnalysisClient
 		}
 		catch (Exception e)
 		{
-			System.out.println("[analysis client] Exception");
+			LOGGER.info("[analysis client] Exception");
 			e.printStackTrace();
 		}
 		finally
@@ -171,7 +174,7 @@ public class TestAnalysisClient
 			{
 				try
 				{
-					System.out.println("[analysis client] calling close()");
+					LOGGER.info("[analysis client] calling close()");
 					analysisClient.close();
 				}
 				catch (Exception ignore)
@@ -183,8 +186,7 @@ public class TestAnalysisClient
 			{
 				try
 				{
-					System.out
-							.println("[analysis client] calling server.destroy()");
+					LOGGER.info("[analysis client] calling server.destroy()");
 					analysisServlet.destroy();
 				}
 				catch (Exception ignore)
@@ -261,14 +263,13 @@ public class TestAnalysisClient
 			Thread.sleep(100);
 		}
 
-		System.out.println("[analysis client] got a reply message delivery");
+		LOGGER.info("[analysis client] got a reply message delivery");
 		return delivery;
 	}
 
 	public void close() throws Exception
 	{
-		System.out
-				.println("[analysis client] closing connection to the server");
+		LOGGER.info("[analysis client] closing connection to the server");
 		connection.close();
 	}
 }
