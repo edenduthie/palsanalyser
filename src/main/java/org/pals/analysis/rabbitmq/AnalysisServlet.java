@@ -34,11 +34,11 @@ public class AnalysisServlet extends HttpServlet
 	private final static Logger LOGGER = Logger.getLogger(AnalysisServlet.class
 			.getName());
 	private static final long serialVersionUID = -1975361388372623587L;
-	private static long SLEEP_DURATION = 10000;
-
+	
+	private long sleepDuration = 10000;
 	private boolean isRunningAsMain = false;
 	private boolean isRunningAsServlet = true;
-
+	
 	// default values
 	// TODO: These may be set by using IoC
 	private String rpcQueueName = "pals_analysis";
@@ -48,49 +48,6 @@ public class AnalysisServlet extends HttpServlet
 
 	private List<Thread> threads;
 	private List<AnalysisWorker> workers;
-
-	/**
-	 * Main: It uses init() and destroy() of Servlet methods
-	 * 
-	 * @param argv
-	 */
-	public static void main(String[] argv)
-	{
-		AnalysisServlet me = new AnalysisServlet();
-		me.isRunningAsMain = true;
-		me.isRunningAsServlet = false;
-		try
-		{
-			me.init();
-
-			// It must keep running if it is not a Servlet
-			while (me.isRunningAsMain)
-			{
-				try
-				{
-					Thread.sleep(SLEEP_DURATION);
-				}
-				catch (InterruptedException e)
-				{
-					LOGGER.info("server is to terminate");
-					me.isRunningAsMain = false;
-				}
-			}
-		}
-		catch (ServletException e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			me.destroy();
-		}
-	}
-
-	public void stopMain()
-	{
-		this.isRunningAsMain = false;
-	}
 
 	/**
 	 * Constructor
@@ -130,7 +87,7 @@ public class AnalysisServlet extends HttpServlet
 	@Override
 	public void destroy()
 	{
-		if (this.isRunningAsMain) stopMain();
+		if (this.isRunningAsMain) this.isRunningAsMain = false;
 
 		for (Object o : workers)
 		{
@@ -194,11 +151,6 @@ public class AnalysisServlet extends HttpServlet
 		this.numOfWorkers = numOfWorkers;
 	}
 
-	public static long getSleepDuration()
-	{
-		return SLEEP_DURATION;
-	}
-
 	public String getRpcQueueName()
 	{
 		return rpcQueueName;
@@ -209,14 +161,14 @@ public class AnalysisServlet extends HttpServlet
 		this.rpcQueueName = rpcQueueName;
 	}
 
-	public static long getSLEEP_DURATION()
+	public long getSleepDuration()
 	{
-		return SLEEP_DURATION;
+		return this.sleepDuration;
 	}
 
-	public static void setSLEEP_DURATION(long sLEEP_DURATION)
+	public void setSleepDuration(long sleepDuration)
 	{
-		SLEEP_DURATION = sLEEP_DURATION;
+		this.sleepDuration = sleepDuration;
 	}
 
 	public String getInputDataDirPath()
