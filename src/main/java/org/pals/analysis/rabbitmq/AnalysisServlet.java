@@ -180,4 +180,14 @@ public class AnalysisServlet extends HttpServlet
 	{
 		this.inputDataDirPath = inputDataDirPath;
 	}
+
+	public String getOutputDataDirPath()
+	{
+		return outputDataDirPath;
+	}
+
+	public void setOutputDataDirPath(String outputDataDirPath)
+	{
+		this.outputDataDirPath = outputDataDirPath;
+	}
 }
