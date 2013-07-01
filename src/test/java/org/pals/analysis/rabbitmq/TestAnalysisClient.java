@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.pals.analysis.analyser.handler.CSV2NetCDFHandler;
 import org.pals.analysis.request.AnalysisRequest;
+import org.pals.analysis.run.AnalysisServerRunner;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -131,16 +132,17 @@ public class TestAnalysisClient
 	public void process()
 	{
 		TestAnalysisClient analysisClient = null;
-		AnalysisServlet analysisServlet = null;
-
+		Thread serverThread = null;
 		try
 		{
 			// First copy the test data files into the input directory
+			
+			// Then, start the server
+			AnalysisServerRunner runner = new AnalysisServerRunner();
+			serverThread = new Thread(runner);
+			serverThread.start();
 
-			analysisServlet = new AnalysisServlet();
-			analysisServlet.setRunningAsServlet(false);
-			analysisServlet.init();
-
+			// Now send some requests
 			analysisClient = new TestAnalysisClient();
 
 			String corrId = UUID.randomUUID().toString();
@@ -154,8 +156,7 @@ public class TestAnalysisClient
 					.waitForDelivery(corrId);
 
 			String response = new String(delivery.getBody(), "UTF-8");
-			LOGGER.info("[analysis client] reply message '" + response
-					+ "'");
+			LOGGER.info("[analysis client] reply message '" + response + "'");
 
 			// TODO: Read server output files and delete them.
 
@@ -182,17 +183,13 @@ public class TestAnalysisClient
 				}
 				analysisClient = null;
 			}
-			if (analysisServlet != null)
+			try
 			{
-				try
-				{
-					LOGGER.info("[analysis client] calling server.destroy()");
-					analysisServlet.destroy();
-				}
-				catch (Exception ignore)
-				{
-				}
-				analysisServlet = null;
+				LOGGER.info("[server thread] calling interrupt()");
+				serverThread.interrupt();
+			}
+			catch (Exception ignore)
+			{
 			}
 		}
 	}
