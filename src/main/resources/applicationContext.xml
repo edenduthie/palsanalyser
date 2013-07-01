@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- http://static.springsource.org/spring/docs/3.2.3.RELEASE/spring-framework-reference/ -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="analysisServer" class="org.pals.analysis.rabbitmq.AnalysisServlet">
+		<property name="rpcQueueName" value="pals_analysis" />
+		<property name="inputDataDirPath" value="/tmp/palsAnalyser/input" />
+		<property name="outputDataDirPath" value="/tmp/palsAnalyser/output" />
+		<property name="numOfWorkers" value="3" />
+	</bean>
+
+</beans>
